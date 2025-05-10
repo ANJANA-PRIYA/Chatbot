@@ -1,6 +1,5 @@
-from flask import Flask, render_template, request, jsonify
+import streamlit as st
 import google.generativeai as genai
-import os
 
 # Configure Gemini API key
 GOOGLE_API_KEY = "AIzaSyD9qMcPLvmDJOZzjBueOL17_f0EuhJgl64"
@@ -10,29 +9,35 @@ genai.configure(api_key=GOOGLE_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 chat = model.start_chat(history=[])
 
-app = Flask(__name__)
+# Streamlit UI
+st.set_page_config(page_title="Gemini Chatbot", layout="centered")
+st.title("🤖 Gemini Chatbot")
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+# Chat history
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-@app.route('/chat', methods=['POST'])
-def chat_response():
-    user_input = request.json.get('message')
-    if not user_input:
-        return jsonify({"error": "No message provided"}), 400
-    
-    try: 
-        response = chat.send_message(user_input).text
-        print(response)  # Debugging output
-        return jsonify({"response": response})
-    
+# Display chat history
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# Input box
+prompt = st.chat_input("Say something...")
+
+# On user input
+if prompt:
+    # Add user message
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    try:
+        response = chat.send_message(prompt).text
+        # Add bot response
+        st.session_state.messages.append({"role": "assistant", "content": response})
+        with st.chat_message("assistant"):
+            st.markdown(response)
     except Exception as e:
-        print(f"❌ Error: {e}")
-        return jsonify({"error": "Internal server error"}), 500
+        st.error(f"⚠️ Internal error: {e}")
 
-# Single entry point for the application
-if __name__ == '__main__':
-    # Get the port from the environment variable or default to 5000
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)  # Enable debug mode for development
