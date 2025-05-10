@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 import google.generativeai as genai
+import os
 
 # Configure Gemini API key
 GOOGLE_API_KEY = "AIzaSyD9qMcPLvmDJOZzjBueOL17_f0EuhJgl64"
@@ -29,6 +30,9 @@ def chat_response():
     except Exception as e:
         print(f"❌ Error: {e}")
         return jsonify({"error": "Internal server error"}), 500
-    
-if __name__ == '__main__': 
-    app.run(debug=True)
+
+# Single entry point for the application
+if __name__ == '__main__':
+    # Get the port from the environment variable or default to 5000
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)  # Enable debug mode for development
